@@ -1,43 +1,46 @@
-from PIL import Image
+import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
-def roberts_operator(image):
-    # Chuyển đổi ảnh thành ảnh xám
-    grayscale_image = image.convert("L")
+def roberts_operator(image_path):
+    # Read the image
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
-    # Chuyển đổi ảnh thành mảng numpy
-    image_array = np.array(grayscale_image)
+    # Check if the image is valid
+    if image is None:
+        print("Unable to read the image.")
+        return
 
-    # Ma trận lọc Roberts Gx
-    filter_matrix_gx = np.array([[1, 0], [0, -1]])
+    # Define Roberts kernels
+    kernel_x = np.array([[1, 0], [0, -1]], dtype=np.float32)
+    kernel_y = np.array([[0, 1], [-1, 0]], dtype=np.float32)
 
-    # Ma trận lọc Roberts Gy
-    filter_matrix_gy = np.array([[0, 1], [-1, 0]])
+    # Apply convolution with Roberts kernels
+    gradient_x = cv2.filter2D(image, cv2.CV_64F, kernel_x)
+    gradient_y = cv2.filter2D(image, cv2.CV_64F, kernel_y)
 
-    # Áp dụng ma trận lọc Gx và Gy lên ảnh
-    filtered_image_gx = np.abs(np.convolve(image_array, filter_matrix_gx, mode="same"))
-    filtered_image_gy = np.abs(np.convolve(image_array, filter_matrix_gy, mode="same"))
+    # Compute the magnitude of the gradient
+    gradient_magnitude = np.sqrt(np.square(gradient_x) + np.square(gradient_y))
 
-    # Kết hợp hai ảnh kết quả
-    combined_image = np.sqrt(np.square(filtered_image_gx) + np.square(filtered_image_gy))
+    # Display the results
+    plt.figure(figsize=(10, 4))
 
-    # Chuyển đổi lại thành ảnh PIL
-    edge_image = Image.fromarray(combined_image.astype(np.uint8))
+    plt.subplot(1, 3, 1)
+    plt.imshow(image, cmap='gray')
+    plt.title('Original Image')
 
-    return edge_image
+    plt.subplot(1, 3, 2)
+    plt.imshow(gradient_x, cmap='gray')
+    plt.title('Roberts Operator (X-direction)')
 
-# Đường dẫn đến ảnh
-image_path = "path/to/your/image.png"
+    plt.subplot(1, 3, 3)
+    plt.imshow(gradient_y, cmap='gray')
+    plt.title('Roberts Operator (Y-direction)')
 
-# Đọc ảnh
-image = Image.open(image_path)
+    plt.show()
 
-# Áp dụng thuật toán Toán tử Roberts
-edge_result = roberts_operator(image)
+# Image path
+image_path = r'img\king_emperor.jpg' # Change the path to your actual image
 
-# Lưu ảnh kết quả
-output_path = "path/to/save/edge_image.png"
-edge_result.save(output_path)
-
-# Hiển thị ảnh kết quả
-edge_result.show()
+# Apply Roberts Operator
+roberts_operator(image_path)
